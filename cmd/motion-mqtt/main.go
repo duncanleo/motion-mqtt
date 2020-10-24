@@ -74,13 +74,25 @@ func main() {
 	var previousRpioState rpio.State
 	for {
 		var rpioState = rpioPin.Read()
-		if rpioState == rpio.High && previousRpioState != rpioState {
-			log.Println("Sensor detected!")
+		if previousRpioState == rpioState {
+			continue
+		}
 
-			token := client.Publish(*topic, 0, false, time.Now().Format(time.RFC1123Z))
-			if token.Error() != nil {
-				log.Println(token.Error())
-			}
+		var message = ""
+
+		switch rpioState {
+		case rpio.High:
+			log.Println("Sensor detected!", time.Now().Format(time.RFC1123Z))
+			message = "ON"
+			break
+		case rpio.Low:
+			message = "OFF"
+			break
+		}
+
+		token := client.Publish(*topic, 0, true, message)
+		if token.Error() != nil {
+			log.Println(token.Error())
 		}
 		previousRpioState = rpioState
 		time.Sleep(time.Millisecond * 100)
